@@ -1,4 +1,4 @@
-AC_INIT(asio, [1.16.1])
+AC_INIT(asio, [1.18.0])
 AC_CONFIG_SRCDIR(include/asio.hpp)
 AM_MAINTAINER_MODE
 AM_INIT_AUTOMAKE([tar-ustar])
@@ -17,8 +17,11 @@ AC_ARG_WITH(boost,
   if test "${withval}" = no; then
     STANDALONE="yes"
   else
-    CPPFLAGS="$CPPFLAGS -I${withval} -DASIO_ENABLE_BOOST -DBOOST_CHRONO_HEADER_ONLY -DBOOST_CHRONO_DONT_PROVIDE_HYBRID_ERROR_HANDLING"
-    LIBS="$LIBS -L${withval}/stage/lib"
+    if test "${withval}" != system; then
+      CPPFLAGS="$CPPFLAGS -I${withval}"
+      LIBS="$LIBS -L${withval}/stage/lib"
+    fi
+    CPPFLAGS="$CPPFLAGS -DASIO_ENABLE_BOOST -DBOOST_CHRONO_HEADER_ONLY -DBOOST_CHRONO_DONT_PROVIDE_HYBRID_ERROR_HANDLING"
   fi
 ],
 [
@@ -142,6 +145,11 @@ AC_COMPILE_IFELSE(
 AC_MSG_CHECKING([whether C++14 is enabled])
 AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM(
+    [[#if defined(__GNUC__) && !defined(__clang__)]]
+    [[# if (__GNUC__ <= 6)]]
+    [[#  error C++14 support on this compiler not sufficiently compliant]]
+    [[# endif]]
+    [[#endif]]
     [[#if __cplusplus < 201402L]]
     [[#error C++14 not available]]
     [[#endif]])],
@@ -215,6 +223,7 @@ AC_OUTPUT([
   include/Makefile
   src/Makefile
   src/tests/Makefile
+  src/tests/properties/Makefile
   src/examples/cpp03/Makefile
   src/examples/cpp11/Makefile
   src/examples/cpp14/Makefile
